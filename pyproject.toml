@@ -1,0 +1,14 @@
+[project]
+name = "fcs-plotter"
+version = "0.1.0"
+description = "A PyQt6 application for reading and plotting FCS files."
+authors = [{ name = "Your Name", email = "wolpumba@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "joblib>=1.5.1",
+    "matplotlib>=3.10.5",
+    "pyqt6>=6.9.1",
+    "pyyaml>=6.0.2",
+    "readfcs>=2.0.1",
+]

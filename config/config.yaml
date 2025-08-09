@@ -1,0 +1,12 @@
+logging:
+  log_file: "logs/app.log"
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%dT%H:%M:%S%z"
+
+cache:
+  directory: "cache"
+
+plotting:
+  default_x_channel: "FSC-A"
+  default_y_channel: "SSC-A"
