@@ -2,26 +2,12 @@
 
 A PyQt6 application for reading and plotting FCS (Flow Cytometry Standard) files.
 
-## Installation
-
-```bash
-# Install in development mode
-uv pip install -e .
-```
-
 ## Usage
 
-Run the application using any of these methods:
+Run the application using:
 
 ```bash
-# Using the installed command
-fcs-plotter
-
-# Running as a module
-uv run python -m fcs_plotter
-
-# Direct execution
-uv run python fcs_plotter/main.py
+uv run fcs-plotter
 ```
 
 ## Features
@@ -30,3 +16,4 @@ uv run python fcs_plotter/main.py
 - Interactive channel selection for X and Y axes
 - Cached file loading for better performance
 - Integrated logging display
+
