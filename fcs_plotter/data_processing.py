@@ -1,5 +1,5 @@
 import pandas as pd
-from readfcs import read
+import readfcs
 from joblib import Memory
 from .path_utils import get_cache_dir
 from .logger_setup import logger
@@ -17,9 +17,12 @@ def load_fcs_file(file_path: str) -> tuple[pd.DataFrame, dict]:
     """
     try:
         logger.info(f"Reading FCS file: {file_path}")
-        data, metadata = read(file_path)
+        adata = readfcs.read(str(file_path))
+        df = adata.to_df()
+        # Extract metadata if available
+        metadata = getattr(adata, 'uns', {}) if hasattr(adata, 'uns') else {}
         logger.info(f"Successfully read {file_path}")
-        return data, metadata
+        return df, metadata
     except Exception as e:
         logger.error(f"Failed to read FCS file {file_path}: {e}")
         return None, None
