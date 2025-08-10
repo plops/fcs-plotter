@@ -26,3 +26,25 @@ def load_fcs_file(file_path: str) -> tuple[pd.DataFrame, dict]:
     except Exception as e:
         logger.error(f"Failed to read FCS file {file_path}: {e}")
         return None, None
+
+
+def load_and_merge_fcs_files(datasets: dict) -> pd.DataFrame:
+    """
+    Merges multiple FCS file dataframes into a single dataframe.
+    Adds a 'file_path' column to identify the source file.
+    """
+    if not datasets:
+        return pd.DataFrame()
+
+    dfs_to_merge = []
+    for file_path, (data, _) in datasets.items():
+        df = data.copy()
+        df["file_path"] = file_path
+        dfs_to_merge.append(df)
+
+    if not dfs_to_merge:
+        return pd.DataFrame()
+
+    merged_df = pd.concat(dfs_to_merge, ignore_index=True)
+    logger.info(f"Merged {len(datasets)} files into a single dataframe.")
+    return merged_df

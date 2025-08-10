@@ -17,7 +17,7 @@ from PyQt6.QtCore import Qt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from .data_processing import load_fcs_file
+from .data_processing import load_fcs_file, load_and_merge_fcs_files
 from .config import config
 
 logger = logging.getLogger("fcs_plotter")
@@ -34,6 +34,7 @@ class MainWindow(QMainWindow):
         self.layout = QVBoxLayout(self.central_widget)
 
         self.datasets = {}  # {file_path: (data, metadata)}
+        self.merged_df = None
         self.current_file = None
 
         self._setup_ui()
@@ -124,14 +125,18 @@ class MainWindow(QMainWindow):
                 if data is not None:
                     self.datasets[file_path] = (data, metadata)
                     self.file_combo.addItem(file_path)
-        if self.file_combo.count() > 0 and self.current_file is None:
-            self.file_combo.setCurrentIndex(0)
+
+        if self.datasets:
+            self.merged_df = load_and_merge_fcs_files(self.datasets)
+            if self.file_combo.count() > 0 and self.current_file is None:
+                self.file_combo.setCurrentIndex(0)
+            self.plot_data()
 
     def file_selection_changed(self, file_path):
         if file_path and file_path in self.datasets:
             self.current_file = file_path
             self.update_channel_selectors()
-            self.plot_data()
+            # No replotting here, just updating channel selectors
 
     def update_channel_selectors(self):
         if self.current_file and self.current_file in self.datasets:
@@ -151,26 +156,35 @@ class MainWindow(QMainWindow):
                 self.y_channel_combo.setCurrentText(default_y)
 
     def plot_data(self):
-        if self.current_file and self.current_file in self.datasets:
-            x_channel = self.x_channel_combo.currentText()
-            y_channel = self.y_channel_combo.currentText()
-            data, _ = self.datasets[self.current_file]
+        if self.merged_df is None or self.merged_df.empty:
+            return
 
-            if x_channel and y_channel:
-                self.plot_ax.clear()
-                spot_size = self.spot_size_spinbox.value()
-                spot_alpha = self.spot_alpha_spinbox.value()
+        x_channel = self.x_channel_combo.currentText()
+        y_channel = self.y_channel_combo.currentText()
+
+        if x_channel and y_channel:
+            self.plot_ax.clear()
+            spot_size = self.spot_size_spinbox.value()
+            spot_alpha = self.spot_alpha_spinbox.value()
+
+            for file_path, group in self.merged_df.groupby("file_path"):
                 self.plot_ax.scatter(
-                    data[x_channel], data[y_channel], alpha=spot_alpha, s=spot_size
+                    group[x_channel],
+                    group[y_channel],
+                    alpha=spot_alpha,
+                    s=spot_size,
+                    label=file_path.split("/")[-1],  # Use filename for legend
                 )
-                self.plot_ax.set_xscale('log')
-                self.plot_ax.set_yscale('log')
-                self.plot_ax.set_xlabel(x_channel)
-                self.plot_ax.set_ylabel(y_channel)
-                self.plot_ax.set_title(f"{y_channel} vs {x_channel}")
-                self.plot_ax.grid(True)
-                self.plot_canvas.draw()
-                logger.info(f"Plotted {y_channel} vs {x_channel}")
+
+            self.plot_ax.set_xscale("log")
+            self.plot_ax.set_yscale("log")
+            self.plot_ax.set_xlabel(x_channel)
+            self.plot_ax.set_ylabel(y_channel)
+            self.plot_ax.set_title(f"{y_channel} vs {x_channel}")
+            self.plot_ax.grid(True)
+            self.plot_ax.legend()
+            self.plot_canvas.draw()
+            logger.info(f"Plotted {y_channel} vs {x_channel} for all files.")
 
 
 class QtLogHandler(logging.Handler):
