@@ -21,7 +21,7 @@ logger = logging.getLogger("fcs_plotter")
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, input_files=None):
         super().__init__()
         self.setWindowTitle("FCS Plotter")
         self.setGeometry(100, 100, 1200, 800)
@@ -30,19 +30,28 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
 
-        self.data = None
-        self.metadata = None
+        self.datasets = {}  # {file_path: (data, metadata)}
+        self.current_file = None
 
         self._setup_ui()
+
+        if input_files:
+            self.load_files(input_files)
 
     def _setup_ui(self):
         # Top panel for controls
         control_widget = QWidget()
         control_layout = QVBoxLayout(control_widget)
 
-        self.load_button = QPushButton("Load FCS File")
+        self.load_button = QPushButton("Load FCS File(s)")
         self.load_button.clicked.connect(self.load_file)
         control_layout.addWidget(self.load_button)
+
+        self.file_label = QLabel("Current FCS File:")
+        self.file_combo = QComboBox()
+        self.file_combo.currentTextChanged.connect(self.file_selection_changed)
+        control_layout.addWidget(self.file_label)
+        control_layout.addWidget(self.file_combo)
 
         self.x_channel_label = QLabel("X-Axis Channel:")
         self.x_channel_combo = QComboBox()
@@ -75,18 +84,32 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(main_splitter)
 
     def load_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Open FCS File", "", "FCS Files (*.fcs)"
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            self, "Open FCS File(s)", "", "FCS Files (*.fcs)"
         )
-        if file_path:
-            self.data, self.metadata = load_fcs_file(file_path)
-            if self.data is not None:
-                self.update_channel_selectors()
-                self.plot_data()
+        if file_paths:
+            self.load_files(file_paths)
+
+    def load_files(self, file_paths):
+        for file_path in file_paths:
+            if file_path not in self.datasets:
+                data, metadata = load_fcs_file(file_path)
+                if data is not None:
+                    self.datasets[file_path] = (data, metadata)
+                    self.file_combo.addItem(file_path)
+        if self.file_combo.count() > 0 and self.current_file is None:
+            self.file_combo.setCurrentIndex(0)
+
+    def file_selection_changed(self, file_path):
+        if file_path and file_path in self.datasets:
+            self.current_file = file_path
+            self.update_channel_selectors()
+            self.plot_data()
 
     def update_channel_selectors(self):
-        if self.data is not None:
-            channels = self.data.columns
+        if self.current_file and self.current_file in self.datasets:
+            data, _ = self.datasets[self.current_file]
+            channels = data.columns
             self.x_channel_combo.clear()
             self.x_channel_combo.addItems(channels)
             self.y_channel_combo.clear()
@@ -101,15 +124,18 @@ class MainWindow(QMainWindow):
                 self.y_channel_combo.setCurrentText(default_y)
 
     def plot_data(self):
-        if self.data is not None:
+        if self.current_file and self.current_file in self.datasets:
             x_channel = self.x_channel_combo.currentText()
             y_channel = self.y_channel_combo.currentText()
+            data, _ = self.datasets[self.current_file]
 
             if x_channel and y_channel:
                 self.plot_ax.clear()
                 self.plot_ax.scatter(
-                    self.data[x_channel], self.data[y_channel], alpha=0.5, s=5
+                    data[x_channel], data[y_channel], alpha=0.5, s=5
                 )
+                self.plot_ax.set_xscale('log')
+                self.plot_ax.set_yscale('log')
                 self.plot_ax.set_xlabel(x_channel)
                 self.plot_ax.set_ylabel(y_channel)
                 self.plot_ax.set_title(f"{y_channel} vs {x_channel}")
