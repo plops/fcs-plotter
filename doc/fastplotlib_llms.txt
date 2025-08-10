@@ -650,3 +650,94 @@ Understanding the stack helps in debugging and extending the library.
     *   **Event Handling:** You can attach custom functions to events like `click`, `pointer_move`, or even changes to a graphic's properties (like its `data` or `cmap`). This enables building sophisticated, interactive applications where plots are linked or data can be manipulated directly with the mouse. *(See `./examples/events/drag_points.py` and `scatter_hover.py`)*
 
     *   **Selection Tools:** The library provides selector graphics like `LinearSelector`, `LinearRegionSelector`, and `RectangleSelector` that can be added to other graphics. These tools allow users to interactively select regions of data and trigger callbacks to analyze or visualize the selection. *(See `./examples/selection_tools/fft.py`)*
+
+### How to change the plot title?
+
+Yes, this is directly supported. The title is a property of a `Subplot` object, not the main `Figure`. You can access the specific subplot you want to modify and set its `.title` attribute.
+
+You can access a subplot either by its grid index (e.g., `figure[0, 0]`) or by its name if you provided one when creating the `Figure` (e.g., `figure["my_subplot"]`).
+
+**Example Code:**
+
+```python
+import fastplotlib as fpl
+import numpy as np
+
+# Create a figure with one subplot
+figure = fpl.Figure(size=(700, 560))
+
+# Access the subplot
+subplot = figure[0, 0]
+
+# Set the title of the subplot
+subplot.title = "My Awesome Sine Wave"
+
+# Add some data to the plot
+xs = np.linspace(-10, 10, 100)
+ys = np.sin(xs)
+data = np.column_stack([xs, ys])
+subplot.add_line(data=data)
+
+# You can also change it later
+subplot.title = "A Beautiful Sine Wave Plot"
+
+figure.show()
+```
+*(This is demonstrated in files like `./examples/guis/sine_cosine_funcs.py` and `./examples/machine_learning/kmeans.py`.)*
+
+---
+
+### How to change the axis labels?
+
+Based on the provided examples, **`fastplotlib` does not have a direct, built-in method like `subplot.set_xlabel("Time")`** that you might find in libraries like Matplotlib. The axes in `fastplotlib` are implemented using `pygfx.Ruler` objects, which are primarily designed to display numerical ticks, not descriptive labels.
+
+**However, you can achieve this by using the `add_text()` method** to manually place text labels in the desired positions. This gives you full control over the appearance and placement of the labels.
+
+Here is how you can do it:
+
+1.  **Create your plot** as usual.
+2.  Use the `subplot.add_text()` method to create a `TextGraphic` for each label.
+3.  Use the `offset` and `anchor` parameters to position the text correctly relative to the axes. You may need to experiment with the `offset` values to get the perfect placement.
+
+**Example Code:**
+
+```python
+import fastplotlib as fpl
+import numpy as np
+
+# Create a figure
+figure = fpl.Figure(size=(700, 560))
+subplot = figure[0, 0]
+subplot.title = "Plot with Axis Labels"
+
+# Plot some data
+xs = np.linspace(0, 4 * np.pi, 100)
+ys = np.sin(xs)
+data = np.column_stack([xs, ys])
+line = subplot.add_line(data)
+
+# --- Add X-axis Label ---
+# We place it below the plot area and center it.
+# The exact offset values might need tweaking depending on your data range and figure size.
+subplot.add_text(
+    text="Time (s)",
+    offset=(6, -1.5, 0),  # Position: (x, y, z)
+    anchor="top-center",   # Anchor text from its top-center point
+    font_size=16
+)
+
+# --- Add Y-axis Label ---
+# We place it to the left of the plot area and rotate it.
+y_label = subplot.add_text(
+    text="Amplitude",
+    offset=(-1, 0, 0),     # Position: (x, y, z)
+    anchor="bottom-right", # Anchor text from its bottom-right point
+    font_size=16
+)
+# Rotate it by 90 degrees (pi/2 radians) around the z-axis to make it vertical
+y_label.rotate(np.pi / 2, axis="z")
+
+
+figure.show()
+```
+*(The use of `add_text` is shown in `./examples/text/moving_label.py`.)*
