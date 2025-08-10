@@ -9,6 +9,9 @@ from PyQt6.QtWidgets import (
     QLabel,
     QSplitter,
     QTextEdit,
+    QSpinBox,
+    QDoubleSpinBox,
+    QHBoxLayout,
 )
 from PyQt6.QtCore import Qt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -64,6 +67,30 @@ class MainWindow(QMainWindow):
         self.y_channel_combo.currentTextChanged.connect(self.plot_data)
         control_layout.addWidget(self.y_channel_label)
         control_layout.addWidget(self.y_channel_combo)
+
+        # Plotting parameters
+        plot_params_layout = QHBoxLayout()
+
+        # Spot size
+        self.spot_size_label = QLabel("Spot Size:")
+        self.spot_size_spinbox = QSpinBox()
+        self.spot_size_spinbox.setRange(1, 100)
+        self.spot_size_spinbox.setValue(config["plotting"]["spot_size"])
+        self.spot_size_spinbox.valueChanged.connect(self.plot_data)
+        plot_params_layout.addWidget(self.spot_size_label)
+        plot_params_layout.addWidget(self.spot_size_spinbox)
+
+        # Spot alpha
+        self.spot_alpha_label = QLabel("Spot Alpha:")
+        self.spot_alpha_spinbox = QDoubleSpinBox()
+        self.spot_alpha_spinbox.setRange(0.01, 1.0)
+        self.spot_alpha_spinbox.setSingleStep(0.05)
+        self.spot_alpha_spinbox.setValue(config["plotting"]["spot_alpha"])
+        self.spot_alpha_spinbox.valueChanged.connect(self.plot_data)
+        plot_params_layout.addWidget(self.spot_alpha_label)
+        plot_params_layout.addWidget(self.spot_alpha_spinbox)
+
+        control_layout.addLayout(plot_params_layout)
 
         # Main splitter for plot and logs
         main_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -131,8 +158,10 @@ class MainWindow(QMainWindow):
 
             if x_channel and y_channel:
                 self.plot_ax.clear()
+                spot_size = self.spot_size_spinbox.value()
+                spot_alpha = self.spot_alpha_spinbox.value()
                 self.plot_ax.scatter(
-                    data[x_channel], data[y_channel], alpha=0.5, s=5
+                    data[x_channel], data[y_channel], alpha=spot_alpha, s=spot_size
                 )
                 self.plot_ax.set_xscale('log')
                 self.plot_ax.set_yscale('log')
