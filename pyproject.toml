@@ -18,6 +18,8 @@ dependencies = [
     "readfcs>=2.0.1",
     "pyqtgraph>=0.13.3",
     "seaborn>=0.13.2",
+    "fastplotlib>=0.5.0",
+    "numpy>=1.20.0",
 ]
 
 [project.scripts]

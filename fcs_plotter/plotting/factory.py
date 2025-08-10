@@ -1,9 +1,11 @@
 from .matplotlib_plotter import MatplotlibPlotter
 from .pyqtgraph_plotter import PyQtGraphPlotter
+from .fastplotlib_plotter import FastplotlibPlotter
 
 PLOTTERS = {
     "pyqtgraph": PyQtGraphPlotter,
     "matplotlib": MatplotlibPlotter,
+    "fastplotlib": FastplotlibPlotter,
 }
 
 PLOTTER_NAMES = list(PLOTTERS.keys())
