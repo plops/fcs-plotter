@@ -3,7 +3,7 @@ from .pyqtgraph_plotter import PyQtGraphPlotter
 
 PLOTTERS = {
     "pyqtgraph": PyQtGraphPlotter,
-    "seaborn": MatplotlibPlotter,
+    "matplotlib": MatplotlibPlotter,
 }
 
 PLOTTER_NAMES = list(PLOTTERS.keys())
@@ -17,5 +17,3 @@ def get_plotter(name: str = "pyqtgraph"):
     if plotter_class:
         return plotter_class()
     raise ValueError(f"Unknown plotter: {name}")
-
-

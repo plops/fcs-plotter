@@ -29,6 +29,7 @@ class PyQtGraphPlotter(BasePlotter):
         spot_alpha: float,
         quantile: float,
         range_margin: float,
+        ratio: float,
     ):
         self.clear()
         self.plot_widget.setLogMode(x=True, y=True)
@@ -37,23 +38,30 @@ class PyQtGraphPlotter(BasePlotter):
         alpha = int(spot_alpha * 255)
         colors = self._get_colors(len(df["file_path"].unique()))
 
-        for i, (file_path, group) in enumerate(df.groupby("file_path")):
+        df_to_plot = df
+        if ratio < 1.0:
+            df_to_plot = df.sample(frac=ratio)
+
+        for i, (file_path, group) in enumerate(df_to_plot.groupby("file_path")):
             # Filter out non-positive values for log scale
-            plot_group = group[
-                (group[x_channel] > 0) & (group[y_channel] > 0)
-            ]
+            plot_group = group[(group[x_channel] > 0) & (group[y_channel] > 0)]
             if plot_group.empty:
                 continue
 
             color = colors[i]
             brush = pg.mkBrush(color=color + (alpha,))
+            # log how many points are being plotted
+            print(f"Plotting {len(plot_group)} points for {file_path}")
+
             scatter = pg.ScatterPlotItem(
                 x=plot_group[x_channel].values,
                 y=plot_group[y_channel].values,
                 size=spot_size,
-                brush=brush,
-                pen=None,
+                pxMode=True,  # Use pixel mode for size
+                brush=brush,  # filling
+                pen=None,  # no outline
                 name=file_path.split("/")[-1],
+                useCache=True,
             )
             self.plot_widget.addItem(scatter)
             self.scatter_items.append(scatter)

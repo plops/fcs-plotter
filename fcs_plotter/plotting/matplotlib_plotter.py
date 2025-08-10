@@ -30,10 +30,15 @@ class MatplotlibPlotter(BasePlotter):
         spot_alpha: float,
         quantile: float,
         range_margin: float,
+        ratio: float,
     ):
         self.clear()
         # Use a copy to avoid SettingWithCopyWarning
         df_plot = df.copy()
+
+        if ratio < 1.0:
+            df_plot = df_plot.sample(frac=ratio)
+
         df_plot["filename"] = df_plot["file_path"].apply(lambda x: x.split("/")[-1])
         sns.scatterplot(
             data=df_plot,
@@ -54,12 +59,16 @@ class MatplotlibPlotter(BasePlotter):
             x_min = df_plot[x_channel].quantile(lower_q)
             x_max = df_plot[x_channel].quantile(upper_q)
             x_range = x_max - x_min
-            self.ax.set_xlim(x_min - x_range * range_margin, x_max + x_range * range_margin)
+            self.ax.set_xlim(
+                x_min - x_range * range_margin, x_max + x_range * range_margin
+            )
 
             y_min = df_plot[y_channel].quantile(lower_q)
             y_max = df_plot[y_channel].quantile(upper_q)
             y_range = y_max - y_min
-            self.ax.set_ylim(y_min - y_range * range_margin, y_max + y_range * range_margin)
+            self.ax.set_ylim(
+                y_min - y_range * range_margin, y_max + y_range * range_margin
+            )
 
         self.ax.set_xscale("log")
         self.ax.set_yscale("log")

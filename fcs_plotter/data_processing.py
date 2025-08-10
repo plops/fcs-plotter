@@ -20,7 +20,7 @@ def load_fcs_file(file_path: str) -> tuple[pd.DataFrame, dict]:
         adata = readfcs.read(str(file_path))
         df = adata.to_df()
         # Extract metadata if available
-        metadata = getattr(adata, 'uns', {}) if hasattr(adata, 'uns') else {}
+        metadata = getattr(adata, "uns", {}) if hasattr(adata, "uns") else {}
         logger.info(f"Successfully read {file_path}")
         return df, metadata
     except Exception as e:

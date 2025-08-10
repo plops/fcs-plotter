@@ -113,6 +113,16 @@ class MainWindow(QMainWindow):
         plot_params_layout.addWidget(self.range_margin_label)
         plot_params_layout.addWidget(self.range_margin_spinbox)
 
+        # Ratio
+        self.ratio_label = QLabel("Ratio:")
+        self.ratio_spinbox = QDoubleSpinBox()
+        self.ratio_spinbox.setRange(0.01, 1.0)
+        self.ratio_spinbox.setSingleStep(0.05)
+        self.ratio_spinbox.setValue(config["plotting"]["ratio"])
+        self.ratio_spinbox.valueChanged.connect(self.plot_data)
+        plot_params_layout.addWidget(self.ratio_label)
+        plot_params_layout.addWidget(self.ratio_spinbox)
+
         control_layout.addLayout(plot_params_layout)
 
         # Main splitter for plot and logs
@@ -129,6 +139,9 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.main_splitter)
 
         # Initialize plotter
+        plotter_backend = config["plotting"]["backend"]
+        if plotter_backend in PLOTTER_NAMES:
+            self.plotter_combo.setCurrentText(plotter_backend)
         self.change_plotter(self.plotter_combo.currentText())
 
     def change_plotter(self, plotter_name):
@@ -163,9 +176,7 @@ class MainWindow(QMainWindow):
     def _update_channel_selectors(self):
         if self.merged_df is not None and not self.merged_df.empty:
             # Get channels from the merged dataframe, excluding 'file_path'
-            channels = [
-                col for col in self.merged_df.columns if col != "file_path"
-            ]
+            channels = [col for col in self.merged_df.columns if col != "file_path"]
             current_x = self.x_channel_combo.currentText()
             current_y = self.y_channel_combo.currentText()
 
@@ -209,6 +220,7 @@ class MainWindow(QMainWindow):
             spot_alpha = self.spot_alpha_spinbox.value()
             quantile = self.quantile_spinbox.value()
             range_margin = self.range_margin_spinbox.value()
+            ratio = self.ratio_spinbox.value()
 
             self.plotter.plot_data(
                 self.merged_df,
@@ -218,6 +230,7 @@ class MainWindow(QMainWindow):
                 spot_alpha,
                 quantile,
                 range_margin,
+                ratio,
             )
 
 
