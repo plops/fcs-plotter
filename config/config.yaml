@@ -12,6 +12,7 @@ cache:
   directory: "cache"
 
 plotting:
+  backend: "matplotlib" # Options: "matplotlib", "pyqtgraph"
   default_x_channel: "FSC-A"
   default_y_channel: "SSC-A"
   spot_size: 5

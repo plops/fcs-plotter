@@ -14,11 +14,9 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
 )
 from PyQt6.QtCore import Qt
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-
 from .data_processing import load_fcs_file, load_and_merge_fcs_files
 from .config import config
+from .plotting.factory import get_plotter, PLOTTER_NAMES
 
 logger = logging.getLogger("fcs_plotter")
 
@@ -36,6 +34,8 @@ class MainWindow(QMainWindow):
         self.datasets = {}  # {file_path: (data, metadata)}
         self.merged_df = None
         self.current_file = None
+        self.plotter = None
+        self.plot_widget = None
 
         self._setup_ui()
 
@@ -72,6 +72,14 @@ class MainWindow(QMainWindow):
         # Plotting parameters
         plot_params_layout = QHBoxLayout()
 
+        # Plotter selection
+        self.plotter_label = QLabel("Plotting Library:")
+        self.plotter_combo = QComboBox()
+        self.plotter_combo.addItems(PLOTTER_NAMES)
+        self.plotter_combo.currentTextChanged.connect(self.change_plotter)
+        plot_params_layout.addWidget(self.plotter_label)
+        plot_params_layout.addWidget(self.plotter_combo)
+
         # Spot size
         self.spot_size_label = QLabel("Spot Size:")
         self.spot_size_spinbox = QSpinBox()
@@ -94,22 +102,30 @@ class MainWindow(QMainWindow):
         control_layout.addLayout(plot_params_layout)
 
         # Main splitter for plot and logs
-        main_splitter = QSplitter(Qt.Orientation.Vertical)
-
-        # Matplotlib plot canvas
-        self.plot_canvas = FigureCanvas(Figure(figsize=(5, 4)))
-        self.plot_ax = self.plot_canvas.figure.subplots()
-        main_splitter.addWidget(self.plot_canvas)
+        self.main_splitter = QSplitter(Qt.Orientation.Vertical)
 
         # Log display
         self.log_display = QTextEdit()
         self.log_display.setReadOnly(True)
-        main_splitter.addWidget(self.log_display)
+        self.main_splitter.addWidget(self.log_display)
         self.log_handler = QtLogHandler(self.log_display)
         logger.addHandler(self.log_handler)
 
         self.layout.addWidget(control_widget)
-        self.layout.addWidget(main_splitter)
+        self.layout.addWidget(self.main_splitter)
+
+        # Initialize plotter
+        self.change_plotter(self.plotter_combo.currentText())
+
+    def change_plotter(self, plotter_name):
+        if self.plot_widget:
+            self.plot_widget.setParent(None)
+            self.plot_widget.deleteLater()
+
+        self.plotter = get_plotter(plotter_name)
+        self.plot_widget = self.plotter.get_widget()
+        self.main_splitter.insertWidget(0, self.plot_widget)
+        self.plot_data()
 
     def load_file(self):
         file_paths, _ = QFileDialog.getOpenFileNames(
@@ -130,13 +146,18 @@ class MainWindow(QMainWindow):
             self.merged_df = load_and_merge_fcs_files(self.datasets)
             if self.file_combo.count() > 0 and self.current_file is None:
                 self.file_combo.setCurrentIndex(0)
-            self.plot_data()
+            # self.plot_data() is called by file_selection_changed -> update_channel_selectors -> plot_data
+            # but if only one file is loaded, file_selection_changed is not triggered if it's already selected
+            # so we might need to call it.
+            # The selection change will trigger the rest of the update chain.
+            if self.file_combo.currentIndex() == 0:
+                self.file_selection_changed(self.file_combo.currentText())
 
     def file_selection_changed(self, file_path):
         if file_path and file_path in self.datasets:
             self.current_file = file_path
             self.update_channel_selectors()
-            # No replotting here, just updating channel selectors
+            self.plot_data()
 
     def update_channel_selectors(self):
         if self.current_file and self.current_file in self.datasets:
@@ -156,35 +177,19 @@ class MainWindow(QMainWindow):
                 self.y_channel_combo.setCurrentText(default_y)
 
     def plot_data(self):
-        if self.merged_df is None or self.merged_df.empty:
+        if self.merged_df is None or self.merged_df.empty or self.plotter is None:
             return
 
         x_channel = self.x_channel_combo.currentText()
         y_channel = self.y_channel_combo.currentText()
 
         if x_channel and y_channel:
-            self.plot_ax.clear()
             spot_size = self.spot_size_spinbox.value()
             spot_alpha = self.spot_alpha_spinbox.value()
 
-            for file_path, group in self.merged_df.groupby("file_path"):
-                self.plot_ax.scatter(
-                    group[x_channel],
-                    group[y_channel],
-                    alpha=spot_alpha,
-                    s=spot_size,
-                    label=file_path.split("/")[-1],  # Use filename for legend
-                )
-
-            self.plot_ax.set_xscale("log")
-            self.plot_ax.set_yscale("log")
-            self.plot_ax.set_xlabel(x_channel)
-            self.plot_ax.set_ylabel(y_channel)
-            self.plot_ax.set_title(f"{y_channel} vs {x_channel}")
-            self.plot_ax.grid(True)
-            self.plot_ax.legend()
-            self.plot_canvas.draw()
-            logger.info(f"Plotted {y_channel} vs {x_channel} for all files.")
+            self.plotter.plot_data(
+                self.merged_df, x_channel, y_channel, spot_size, spot_alpha
+            )
 
 
 class QtLogHandler(logging.Handler):
