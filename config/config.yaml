@@ -1,3 +1,7 @@
+# input_files is optional, can be a list of file paths or a glob patterns (e.g., "*.fcs" or "**/*.fcs").
+input_files:
+  - "/home/kiel/stage/flow/data/fcs/*.fcs"
+
 logging:
   log_file: "logs/app.log"
   level: "INFO"

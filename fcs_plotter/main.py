@@ -12,8 +12,12 @@ def main():
     app = QApplication(sys.argv)
 
     input_files = []
-    if "input_files" in config:
-        for pattern in config["input_files"]:
+    if "input_files" in config and config["input_files"]:
+        patterns = config["input_files"]
+        if isinstance(patterns, str):
+            patterns = [patterns]
+
+        for pattern in patterns:
             input_files.extend(glob.glob(pattern, recursive=True))
 
     main_win = MainWindow(input_files=input_files)
