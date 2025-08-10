@@ -17,10 +17,10 @@ class BasePlotter(ABC):
         df: pd.DataFrame,
         x_channel: str,
         y_channel: str,
-        spot_size: int,
-        spot_alpha: float,
-        quantile: float,
-        range_margin: float,
+        spot_size: int, # Size of the spots in pixels
+        spot_alpha: float, # 0 to 1, where 0 is fully transparent and 1 is fully opaque
+        quantile: float, # 0 to 1, ratio of data to include in the quantile plot range, larger values include more data
+        range_margin: float, # 0 to 1, increases plot around the quantile range by this factor (e.g. 0.1 means 10% of the range on each side is added to the plot limits)
     ):
         """Plot the data from the dataframe."""
         pass
