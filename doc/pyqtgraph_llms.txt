@@ -1,0 +1,360 @@
+# llms.txt
+
+**project_name:** pyqtgraph
+
+**project_website:** https://www.pyqtgraph.org
+
+**project_repository:** https://github.com/pyqtgraph/pyqtgraph
+
+**project_docs:** https://pyqtgraph.readthedocs.io
+
+**description:**
+PyQtGraph is a pure-Python graphics and GUI library for scientific and engineering applications. It is built on PyQt/PySide and NumPy. Despite being written entirely in Python, the library is very fast due to its heavy leverage of NumPy for number crunching, Qt's GraphicsView framework for 2D display, and OpenGL for 3D display. Key features include fast interactive plotting, image and video display, 3D graphics (meshes, volumetric rendering, isosurfaces), a parameter tree system for GUI prototyping, a visual programming flowchart system, and a dockable widget system.
+
+**license:** MIT License
+
+**installation:**
+The recommended way to install pyqtgraph is from PyPI using pip:
+`pip install pyqtgraph`
+
+Alternatively, it can be installed from conda-forge:
+`conda install -c conda-forge pyqtgraph`
+
+To install the latest development version from GitHub:
+`pip install git+https://github.com/pyqtgraph/pyqtgraph@master`
+
+**usage:**
+PyQtGraph can be used for simple plotting from the command line or embedded within a larger Qt application.
+
+A simple plot can be created with:
+```python
+import pyqtgraph as pg
+import numpy as np
+
+# Plotting y-values only
+pg.plot([1, 5, 2, 4, 3], title="Simple Plot")
+
+# Plotting x and y values as a scatter plot
+x_data = np.random.normal(size=100)
+y_data = np.random.normal(size=100)
+pg.plot(x_data, y_data, pen=None, symbol='o', title="Scatter Plot")
+```
+
+Displaying an image:
+```python
+import pyqtgraph as pg
+import numpy as np
+
+# Create random image data
+img_data = np.random.normal(size=(200, 200))
+pg.image(img_data, title="Image Display")
+```
+
+To explore the available examples, run:
+`python -m pyqtgraph.examples`
+
+**dependencies:**
+PyQtGraph requires the following dependencies:
+*   Python 3.10+
+*   NumPy 1.25+
+*   One of the following Qt bindings:
+    *   PyQt5 (5.15)
+    *   PySide2 (5.15)
+    *   PyQt6 (6.2+)
+    *   PySide6 (6.2+)
+
+Optional dependencies can be installed to add functionality:
+*   **scipy:** For image processing and data filtering.
+*   **pyopengl:** For 3D graphics.
+*   **h5py:** For exporting to HDF5 format.
+*   **colorcet** and **matplotlib:** For additional colormaps.
+*   **numba** and **cupy:** For accelerated image processing.
+*   **jupyter_rfb:** For Jupyter Notebook support.
+
+**contribution_guidelines:**
+Contributions to pyqtgraph are welcome. The development process follows these general guidelines:
+
+1.  **Environment Setup:** Fork the repository, clone it locally, and create a new branch for your feature or bugfix. It is recommended to use a virtual environment. Install the package in editable mode along with its development dependencies: `python -m pip install -e .`
+2.  **Testing:** PyQtGraph uses `pytest` for its test suite. Tests can be run via `pytest tests`. The examples can also be tested with `pytest pyqtgraph/examples`. For comprehensive testing across different Python versions and Qt bindings, `tox` is used.
+3.  **Documentation:** Documentation is written using Sphinx and NumPy docstring style. To build the documentation locally, install the requirements from `doc/requirements.txt` and run `make html` from within the `doc` directory.
+4.  **Style:** The code generally follows PEP8, with camelCase being preferred for the public API. The use of `pre-commit` is highly encouraged to automatically check for style issues.
+5.  **Benchmarks:** Performance is benchmarked using Air Speed Velocity (asv). Contributors making changes to core components should be mindful of performance impacts.
+6.  **Pull Requests:** Pull requests should be focused on a single feature or fix and targeted at the `master` branch. For major changes, it is recommended to open an issue or discussion first. All continuous integration checks must pass for a PR to be merged.
+
+**key_features:**
+*   **2D Graphics:**
+    *   **Plots:** Fast and interactive line and scatter plots. Supports log axes, date-time axes, and error bars.
+    *   **Images:** Realtime display of image data (e.g., from a camera) with interactive lookup tables and level controls.
+    *   **Regions of Interest (ROIs):** Widgets for selecting and interacting with specific regions of plots or images.
+    *   **Vector Graphics:** Items for drawing shapes like lines, ellipses, and rectangles.
+    *   **Exporting:** Supports exporting to various formats including PNG, JPG, SVG, CSV, and Matplotlib.
+
+*   **3D Graphics:**
+    *   **Scenegraph:** A 3D scenegraph system based on OpenGL.
+    *   **Items:** Includes items for displaying grids, triangular meshes, volumetric data, scatter plots, and lines.
+    *   **Surface and Isosurface Plots:** Functions for generating 3D surfaces and isosurfaces from data.
+
+*   **GUI and Application Development:**
+    *   **ParameterTree:** A widget for displaying and editing a hierarchy of parameters, useful for creating settings dialogs and control panels.
+    *   **Flowcharts:** A visual programming system where functional nodes can be connected to build complex data processing pipelines.
+    *   **Docking System:** A flexible system for creating user interfaces with rearrangeable panels.
+    *   **Widgets:** A collection of specialized widgets for scientific applications, such as `SpinBox`, `ColorButton`, and `GradientWidget`.
+
+**core_concepts:**
+PyQtGraph's architecture is based on Qt's GraphicsView framework. Understanding these core classes is key to building applications:
+*   **GraphicsView:** The top-level QWidget that displays a `GraphicsScene`.
+*   **GraphicsScene:** A container for all of the graphical items. Handles mouse and keyboard events.
+*   **GraphicsItem:** The base class for all objects that can be added to a `GraphicsScene`.
+*   **ViewBox:** A subclass of `GraphicsItem` that provides a coordinate system and allows the user to pan and zoom its contents with the mouse. This is the primary container for displaying data.
+*   **PlotItem:** A container that holds a `ViewBox` along with `AxisItem`s for displaying axes and labels. It provides methods for adding data items.
+*   **PlotDataItem:** A `GraphicsItem` that displays a single dataset, typically as a combination of a line (`PlotCurveItem`) and markers (`ScatterPlotItem`).
+*   **ImageItem:** A `GraphicsItem` used for displaying 2D image data.
+
+**code_examples:**
+Here are some more detailed examples of common tasks in PyQtGraph.
+
+**Creating a window with multiple subplots:**
+```python
+import pyqtgraph as pg
+import numpy as np
+
+# Create a window and a GraphicsLayoutWidget
+win = pg.GraphicsLayoutWidget(show=True, title="Multiple Plots Example")
+win.resize(800, 600)
+
+# Add first plot
+p1 = win.addPlot(row=0, col=0, title="Plot 1")
+p1.plot(np.random.normal(size=100))
+
+# Add second plot
+p2 = win.addPlot(row=0, col=1, title="Plot 2")
+p2.plot(np.random.normal(size=100), pen='r')
+
+# Add a third plot spanning both columns
+p3 = win.addPlot(row=1, col=0, colspan=2, title="Plot 3 (spans columns)")
+p3.plot(np.sin(np.linspace(0, 2*np.pi, 100)), pen='g')
+```
+
+**Real-time plot updating:**
+```python
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtCore
+import numpy as np
+
+app = pg.mkQApp()
+
+win = pg.plot()
+win.setWindowTitle('Real-time Plotting')
+curve = win.plot(pen='y')
+
+data = np.random.normal(size=100)
+ptr = 0
+
+def update():
+    global data, ptr, curve
+    data[:-1] = data[1:]  # Shift data in the array one sample left
+    data[-1] = np.random.normal()  # Add a new random sample
+    curve.setData(data)
+
+    ptr += 1
+    curve.setPos(ptr, 0) # Use setPos to scroll the curve
+
+timer = QtCore.QTimer()
+timer.timeout.connect(update)
+timer.start(50)  # update every 50ms
+
+pg.exec()
+```
+
+**Using a Region of Interest (ROI) on an image:**
+```python
+import pyqtgraph as pg
+import numpy as np
+
+app = pg.mkQApp()
+
+# Create image and ROI
+img_data = np.random.normal(size=(200, 200))
+imv = pg.ImageView()
+imv.setImage(img_data)
+
+roi = pg.RectROI([20, 20], [20, 20], pen='r')
+imv.addItem(roi)
+
+# Create a plot to display the ROI data
+plot = pg.plot(title="ROI Data")
+
+def update_plot():
+    selected_data = roi.getArrayRegion(img_data, imv.imageItem)
+    if selected_data is not None:
+        plot.plot(selected_data.mean(axis=1), clear=True)
+
+roi.sigRegionChanged.connect(update_plot)
+
+imv.show()
+update_plot() # Initial plot
+
+pg.exec()
+```
+
+**community_and_support:**
+*   **Mailing List / Forum:** https://groups.google.com/forum/#!forum/pyqtgraph
+*   **Stack Overflow:** https://stackoverflow.com/questions/tagged/pyqtgraph
+*   **GitHub Issues:** For bug reports and feature requests: https://github.com/pyqtgraph/pyqtgraph/issues
+*   **GitHub Discussions:** For questions and general discussion: https://github.com/pyqtgraph/pyqtgraph/discussions
+*   **Python Discord:** The `#pyqtgraph` channel on the Python Discord server.
+
+
+**project_name:** pyqtgraph
+
+**project_website:** https://www.pyqtgraph.org
+
+**project_repository:** https://github.com/pyqtgraph/pyqtgraph
+
+**project_docs:** https://pyqtgraph.readthedocs.io/en/latest/
+
+**description:** PyQtGraph is a Python library for creating plots and graphics within PyQt applications. It is built on Qt's native `QGraphicsScene`, which provides high-performance drawing, especially for live and interactive data. PyQtGraph is an alternative to embedding Matplotlib plots, offering a more native feel and better integration with PyQt applications. It allows for extensive customization of plots, including background colors, line styles, markers, titles, and axes.
+
+**license:** MIT License
+
+**installation:**
+PyQtGraph can be installed using `pip`:
+```sh
+python -m pip install pyqtgraph
+```
+
+**usage:**
+To create a plot in a PyQt application, you instantiate the `pg.PlotWidget` class and use its `.plot()` method to add data.
+
+Here is a basic example of creating a plot in a `QMainWindow`:
+```python
+import pyqtgraph as pg
+from PyQt5 import QtWidgets
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.plot_graph = pg.PlotWidget()
+        self.setCentralWidget(self.plot_graph)
+
+        time = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        temperature = [30, 32, 34, 32, 33, 31, 29, 32, 35, 30]
+
+        self.plot_graph.plot(time, temperature)
+
+app = QtWidgets.QApplication([])
+main = MainWindow()
+main.show()
+app.exec()
+```
+
+**key_features:**
+*   **High Performance:** Built on `QGraphicsScene` for fast rendering, suitable for real-time data visualization.
+*   **Interactivity:** Plots are interactive by default, allowing for panning and zooming.
+*   **Customization:** Offers extensive options to customize the appearance of plots.
+    *   **Background Color:** Settable with `setBackground()`, accepting color names, hex codes, or RGB/RGBA tuples.
+    *   **Line Styles:** Control line color, width, and style (solid, dashed, dotted) using `pyqtgraph.mkPen()`.
+    *   **Markers:** Add markers to data points using the `symbol` argument in the `.plot()` method. Marker size and color can also be customized.
+    *   **Titles and Labels:** Add a main title with `setTitle()` and axis labels with `setLabel()`. Font styles can be customized using string formatting or dictionaries.
+    *   **Legends:** Add a legend to identify different plot lines using `addLegend()`.
+    *   **Grid:** Display a background grid with `showGrid()`.
+    *   **Axis Range:** Set a fixed range for the x and y axes with `setXRange()` and `setYRange()`.
+*   **Multiple Plot Lines:** Plot multiple datasets on the same `PlotWidget` by calling `.plot()` multiple times.
+*   **Dynamic Plots:** Create plots that update in real-time by getting a reference to the plot line and updating its data with `.setData()`, often used with a `QTimer`.
+
+**core_concepts:**
+*   **PlotWidget:** The central class for all plots in PyQtGraph. It acts as a canvas for adding and configuring plots.
+*   **QGraphicsScene:** The underlying Qt class that `PlotWidget` uses for rendering, ensuring good performance and integration.
+*   **Plotting Data:** The `.plot()` method of a `PlotWidget` instance is used to draw data. The first argument is the x-coordinate data, and the second is the y-coordinate data.
+*   **Custom Pens:** The appearance of lines is controlled by `QPen` objects, which can be easily created with `pyqtgraph.mkPen()`. This allows for customization of color, width, and style.
+*   **Plot Line Reference:** For dynamic plots, a reference to the line object returned by the `.plot()` method is needed to update the data using `.setData()`.
+
+**dependencies:**
+*   PyQt5 (or PyQt6, PySide2, PySide6)
+*   pyqtgraph
+
+**code_examples:**
+
+**Customizing a plot's appearance:**
+```python
+import pyqtgraph as pg
+from PyQt5 import QtWidgets, QtCore
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.plot_graph = pg.PlotWidget()
+        self.setCentralWidget(self.plot_graph)
+
+        # --- Customization ---
+        self.plot_graph.setBackground("w")
+        self.plot_graph.setTitle("Temperature vs Time", color="b", size="20pt")
+        styles = {"color": "red", "font-size": "18px"}
+        self.plot_graph.setLabel("left", "Temperature (°C)", **styles)
+        self.plot_graph.setLabel("bottom", "Time (min)", **styles)
+        self.plot_graph.addLegend()
+        self.plot_graph.showGrid(x=True, y=True)
+        self.plot_graph.setYRange(20, 40)
+
+        time = list(range(10))
+        temperature = [30, 32, 34, 32, 33, 31, 29, 32, 35, 45]
+
+        pen = pg.mkPen(color=(255, 0, 0), width=5, style=QtCore.Qt.DashLine)
+
+        self.plot_graph.plot(
+            time,
+            temperature,
+            name="Temperature Sensor",
+            pen=pen,
+            symbol="+",
+            symbolSize=20,
+            symbolBrush="b",
+        )
+
+app = QtWidgets.QApplication([])
+main = MainWindow()
+main.show()
+app.exec()
+```
+
+**Creating a dynamic, updating plot:**
+```python
+from random import randint
+import pyqtgraph as pg
+from PyQt5 import QtCore, QtWidgets
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.plot_graph = pg.PlotWidget()
+        self.setCentralWidget(self.plot_graph)
+        self.plot_graph.setBackground("w")
+        pen = pg.mkPen(color=(255, 0, 0))
+        self.plot_graph.setTitle("Live Temperature", color="b", size="20pt")
+        self.plot_graph.setYRange(20, 40)
+
+        self.time = list(range(10))
+        self.temperature = [randint(20, 40) for _ in range(10)]
+
+        self.line = self.plot_graph.plot(self.time, self.temperature, pen=pen)
+
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(300)
+        self.timer.timeout.connect(self.update_plot)
+        self.timer.start()
+
+    def update_plot(self):
+        self.time = self.time[1:]
+        self.time.append(self.time[-1] + 1)
+        self.temperature = self.temperature[1:]
+        self.temperature.append(randint(20, 40))
+        self.line.setData(self.time, self.temperature)
+
+app = QtWidgets.QApplication([])
+main = MainWindow()
+main.show()
+app.exec()
+```
