@@ -51,12 +51,6 @@ class MainWindow(QMainWindow):
         self.load_button.clicked.connect(self.load_file)
         control_layout.addWidget(self.load_button)
 
-        self.file_label = QLabel("Current FCS File:")
-        self.file_combo = QComboBox()
-        self.file_combo.currentTextChanged.connect(self.file_selection_changed)
-        control_layout.addWidget(self.file_label)
-        control_layout.addWidget(self.file_combo)
-
         self.x_channel_label = QLabel("X-Axis Channel:")
         self.x_channel_combo = QComboBox()
         self.x_channel_combo.currentTextChanged.connect(self.plot_data)
@@ -99,6 +93,26 @@ class MainWindow(QMainWindow):
         plot_params_layout.addWidget(self.spot_alpha_label)
         plot_params_layout.addWidget(self.spot_alpha_spinbox)
 
+        # Quantile
+        self.quantile_label = QLabel("Quantile:")
+        self.quantile_spinbox = QDoubleSpinBox()
+        self.quantile_spinbox.setRange(0.01, 1.0)
+        self.quantile_spinbox.setSingleStep(0.05)
+        self.quantile_spinbox.setValue(config["plotting"]["quantile"])
+        self.quantile_spinbox.valueChanged.connect(self.plot_data)
+        plot_params_layout.addWidget(self.quantile_label)
+        plot_params_layout.addWidget(self.quantile_spinbox)
+
+        # Range Margin
+        self.range_margin_label = QLabel("Range Margin:")
+        self.range_margin_spinbox = QDoubleSpinBox()
+        self.range_margin_spinbox.setRange(0.0, 2.0)
+        self.range_margin_spinbox.setSingleStep(0.05)
+        self.range_margin_spinbox.setValue(config["plotting"]["range_margin"])
+        self.range_margin_spinbox.valueChanged.connect(self.plot_data)
+        plot_params_layout.addWidget(self.range_margin_label)
+        plot_params_layout.addWidget(self.range_margin_spinbox)
+
         control_layout.addLayout(plot_params_layout)
 
         # Main splitter for plot and logs
@@ -140,44 +154,51 @@ class MainWindow(QMainWindow):
                 data, metadata = load_fcs_file(file_path)
                 if data is not None:
                     self.datasets[file_path] = (data, metadata)
-                    self.file_combo.addItem(file_path)
 
         if self.datasets:
             self.merged_df = load_and_merge_fcs_files(self.datasets)
-            if self.file_combo.count() > 0 and self.current_file is None:
-                self.file_combo.setCurrentIndex(0)
-            # self.plot_data() is called by file_selection_changed -> update_channel_selectors -> plot_data
-            # but if only one file is loaded, file_selection_changed is not triggered if it's already selected
-            # so we might need to call it.
-            # The selection change will trigger the rest of the update chain.
-            if self.file_combo.currentIndex() == 0:
-                self.file_selection_changed(self.file_combo.currentText())
-
-    def file_selection_changed(self, file_path):
-        if file_path and file_path in self.datasets:
-            self.current_file = file_path
-            self.update_channel_selectors()
+            self._update_channel_selectors()
             self.plot_data()
 
-    def update_channel_selectors(self):
-        if self.current_file and self.current_file in self.datasets:
-            data, _ = self.datasets[self.current_file]
-            channels = data.columns
+    def _update_channel_selectors(self):
+        if self.merged_df is not None and not self.merged_df.empty:
+            # Get channels from the merged dataframe, excluding 'file_path'
+            channels = [
+                col for col in self.merged_df.columns if col != "file_path"
+            ]
+            current_x = self.x_channel_combo.currentText()
+            current_y = self.y_channel_combo.currentText()
+
+            self.x_channel_combo.blockSignals(True)
+            self.y_channel_combo.blockSignals(True)
+
             self.x_channel_combo.clear()
             self.x_channel_combo.addItems(channels)
             self.y_channel_combo.clear()
             self.y_channel_combo.addItems(channels)
 
-            # Set default channels from config
-            default_x = config["plotting"]["default_x_channel"]
-            default_y = config["plotting"]["default_y_channel"]
-            if default_x in channels:
-                self.x_channel_combo.setCurrentText(default_x)
-            if default_y in channels:
-                self.y_channel_combo.setCurrentText(default_y)
+            # Restore previous selection if possible
+            if current_x in channels:
+                self.x_channel_combo.setCurrentText(current_x)
+            elif config["plotting"]["default_x_channel"] in channels:
+                self.x_channel_combo.setCurrentText(
+                    config["plotting"]["default_x_channel"]
+                )
+
+            if current_y in channels:
+                self.y_channel_combo.setCurrentText(current_y)
+            elif config["plotting"]["default_y_channel"] in channels:
+                self.y_channel_combo.setCurrentText(
+                    config["plotting"]["default_y_channel"]
+                )
+
+            self.x_channel_combo.blockSignals(False)
+            self.y_channel_combo.blockSignals(False)
 
     def plot_data(self):
         if self.merged_df is None or self.merged_df.empty or self.plotter is None:
+            if self.plotter:
+                self.plotter.clear()
             return
 
         x_channel = self.x_channel_combo.currentText()
@@ -186,9 +207,17 @@ class MainWindow(QMainWindow):
         if x_channel and y_channel:
             spot_size = self.spot_size_spinbox.value()
             spot_alpha = self.spot_alpha_spinbox.value()
+            quantile = self.quantile_spinbox.value()
+            range_margin = self.range_margin_spinbox.value()
 
             self.plotter.plot_data(
-                self.merged_df, x_channel, y_channel, spot_size, spot_alpha
+                self.merged_df,
+                x_channel,
+                y_channel,
+                spot_size,
+                spot_alpha,
+                quantile,
+                range_margin,
             )
 
 

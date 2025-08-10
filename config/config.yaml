@@ -17,3 +17,5 @@ plotting:
   default_y_channel: "SSC-A"
   spot_size: 5
   spot_alpha: 0.5
+  quantile: 0.9
+  range_margin: 0.1

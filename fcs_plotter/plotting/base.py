@@ -19,6 +19,8 @@ class BasePlotter(ABC):
         y_channel: str,
         spot_size: int,
         spot_alpha: float,
+        quantile: float,
+        range_margin: float,
     ):
         """Plot the data from the dataframe."""
         pass
@@ -27,5 +29,3 @@ class BasePlotter(ABC):
     def clear(self):
         """Clear the plot."""
         pass
-
-
