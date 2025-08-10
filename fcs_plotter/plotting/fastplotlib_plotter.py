@@ -3,6 +3,7 @@ import fastplotlib as fpl
 import numpy as np
 import pandas as pd
 from PyQt6.QtWidgets import QWidget
+from pandas.plotting import autocorrelation_plot
 
 from .base import BasePlotter
 
@@ -65,30 +66,34 @@ class FastplotlibPlotter(BasePlotter):
 
         # Add the single scatter graphic. fastplotlib will use a default color.
         self.scatter_graphic = self.subplot.add_scatter(data=data, sizes=spot_size, alpha=spot_alpha)
+        print(self.scatter_graphic.axes)
+
 
         # Calculate and set plot ranges based on quantiles
         lower_q = (1 - quantile) / 2
         upper_q = 1 - lower_q
 
-        x_min = df_plot[x_channel].quantile(lower_q)
-        x_max = df_plot[x_channel].quantile(upper_q)
-        x_range = x_max - x_min
+        x_min_q = df_plot[x_channel].quantile(lower_q)
+        x_max_q = df_plot[x_channel].quantile(upper_q)
+        x_range = x_max_q - x_min_q
         if x_range <= 0:
-            x_range = x_max * 0.1 if x_max > 0 else 1.0
-        self.subplot.axes.x.lim = (
-            x_min - x_range * range_margin,
-            x_max + x_range * range_margin,
-        )
+            x_range = x_max_q * 0.1 if x_max_q > 0 else 1.0
+        x_min = x_min_q - x_range * range_margin
+        x_max = x_max_q + x_range * range_margin
 
-        y_min = df_plot[y_channel].quantile(lower_q)
-        y_max = df_plot[y_channel].quantile(upper_q)
-        y_range = y_max - y_min
+        y_min_q = df_plot[y_channel].quantile(lower_q)
+        y_max_q = df_plot[y_channel].quantile(upper_q)
+        y_range = y_max_q - y_min_q
         if y_range <= 0:
-            y_range = y_max * 0.1 if y_max > 0 else 1.0
-        self.subplot.axes.y.lim = (
-            y_min - y_range * range_margin,
-            y_max + y_range * range_margin,
-        )
+            y_range = y_max_q * 0.1 if y_max_q > 0 else 1.0
+        y_min = y_min_q - y_range * range_margin
+        y_max = y_max_q + y_range * range_margin
+
+        # Set camera to frame the desired data range
+        self.subplot.camera.width = x_max - x_min
+        self.subplot.camera.local.x = (x_min + x_max) / 2
+        self.subplot.camera.height = y_max - y_min
+        self.subplot.camera.local.y = (y_min + y_max) / 2
 
         # Set labels, title, and grid
         # self.subplot.axes.x.set_label(x_channel)

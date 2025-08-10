@@ -479,3 +479,174 @@ Understanding the stack helps in debugging and extending the library.
 
 -   **I see strange visual artifacts or glitches.**
     This is almost always a GPU driver issue. Update to the latest stable drivers from your GPU manufacturer (NVIDIA, AMD, Intel). On Linux, you may also need to ensure `mesa-vulkan-drivers` are installed.
+
+
+    Of course. Here is an overview of the `fastplotlib` Python library based on the provided example files.
+
+    ### General Overview
+
+    `fastplotlib` is a high-performance, GPU-accelerated plotting library built on top of `pygfx`, which in turn uses `wgpu` (a Python implementation of WebGPU). Its primary design goal is to enable fast, interactive visualization of large datasets, including images, videos, and massive scatter or line plots.
+
+    The library's API is object-oriented, centered around a `Figure` object that contains one or more `Subplot`s. You add visuals to these subplots by creating `Graphic` objects like `ImageGraphic`, `LineGraphic`, or `ScatterGraphic`.
+
+    Key characteristics of `fastplotlib` include:
+
+    *   **Performance:** By leveraging the GPU, it can render millions of data points and large images/videos smoothly and animate them in real-time.
+    *   **Interactivity:** It has a rich event system that allows for creating highly interactive plots. You can respond to clicks, mouse movements, and key presses to update plots, highlight data, or build complex data exploration tools.
+    *   **Integration:** It seamlessly integrates into different environments:
+        *   **Jupyter Notebooks/Lab:** It works out-of-the-box in Jupyter and can be controlled using `ipywidgets`.
+        *   **Qt Applications:** A `fastplotlib` Figure can be embedded as a standard widget within a PyQt or PySide application.
+        *   **ImGUI:** It offers an `ImguiFigure` for creating powerful, in-window graphical user interfaces to control plot properties.
+    *   **Specialized Widgets:** It provides high-level components like the `ImageWidget`, which is a powerful tool for viewing and navigating multi-dimensional image stacks and videos with built-in sliders and histogram LUTs.
+
+    ---
+
+    ### How-To Guide
+
+    Here are the answers to your specific questions based on the provided examples.
+
+    #### How to make a scatter plot?
+
+    Yes, this is a core feature of the library. You can create a scatter plot by calling the `add_scatter()` method on a `Subplot` object.
+
+    The data should be a NumPy array of shape `(n_points, 2)` for 2D plots or `(n_points, 3)` for 3D plots. You can customize properties like `sizes`, `colors`, and `alpha`.
+
+    **Example Code:**
+    ```python
+    import fastplotlib as fpl
+    import numpy as np
+
+    # Create a figure with one subplot
+    figure = fpl.Figure(size=(700, 560))
+
+    # Get the subplot object
+    subplot = figure[0, 0]
+
+    # Generate 5,000 random 3D points
+    n_points = 5_000
+    data_cloud = np.random.normal(size=(n_points, 3), scale=5)
+
+    # Add the scatter plot to the subplot
+    scatter_graphic = subplot.add_scatter(data=data_cloud, sizes=3, colors="cyan", alpha=0.7)
+
+    # Show the plot
+    figure.show()
+    ```
+    *(This is based on `./examples/scatter/scatter.py`)*
+
+    ---
+
+    #### How to change the limits of the x-axis?
+
+    Yes, this is possible, but it's handled by manipulating the subplot's **camera** rather than setting axis limits directly like in Matplotlib. The camera controls what portion of the world space is visible.
+
+    The most common way to change limits is interactively by using the built-in pan and zoom controllers. Programmatically, you can change the camera's `width`, `height`, and `position`.
+
+    *   To set the x-limits from `xmin` to `xmax`, you would set the camera's `width` to `xmax - xmin` and its `x` position to the center of that range, `(xmin + xmax) / 2`.
+
+    **Example Code:**
+    ```python
+    import fastplotlib as fpl
+    import numpy as np
+
+    figure = fpl.Figure()
+    subplot = figure[0, 0]
+
+    xs = np.linspace(0, 100, 1000)
+    ys = np.sin(xs)
+    line = subplot.add_line(np.column_stack([xs, ys]))
+
+    # To set the view to show the x-axis from x=20 to x=50:
+    xmin, xmax = 20, 50
+
+    subplot.camera.width = xmax - xmin  # Set the range of the view
+    subplot.camera.local.x = (xmin + xmax) / 2  # Set the center of the view
+
+    figure.show()
+    ```
+    You can also use `subplot.auto_scale()` to automatically adjust the view to fit all the data.
+
+    ---
+
+    #### How to make x and y axis logarithmic?
+
+    Based on the provided example files, **this feature does not appear to be directly supported.** There are no methods like `set_xscale("log")` or `log=True` arguments in any of the plotting calls.
+
+    The library focuses on rendering data directly on a linear scale, leveraging the GPU for speed.
+
+    **Workaround:** You must transform your data *before* plotting it. For example, to plot data on a log-log scale, you would do the following:
+
+    **Example Code:**
+    ```python
+    import fastplotlib as fpl
+    import numpy as np
+
+    figure = fpl.Figure()
+    subplot = figure[0, 0]
+
+    # Original linear data
+    x_linear = np.linspace(1, 1000, 100)
+    y_linear = x_linear**2
+
+    # Manually transform data to a log scale
+    x_log = np.log10(x_linear)
+    y_log = np.log10(y_linear)
+
+    # Plot the transformed data
+    data_log = np.column_stack([x_log, y_log])
+    subplot.add_line(data_log)
+
+    # You would need to manually set tick labels if you want them to reflect the original scale.
+    # The library's focus is on raw performance, so such features might be less developed.
+    subplot.title = "Data plotted on a log-log scale"
+
+    figure.show()
+    ```
+
+    ---
+
+    #### How to export the plot into a png file?
+
+    Yes, this is possible using the `figure.export()` method. This method uses the `imageio` library internally, so you must have it installed (`pip install imageio`).
+
+    **Example Code:**
+    ```python
+    import fastplotlib as fpl
+    import imageio.v3 as iio
+
+    figure = fpl.Figure(size=(700, 560))
+
+    # Load some example image data
+    data = iio.imread("imageio:camera.png")
+
+    # Plot the image data
+    image = figure[0, 0].add_image(data=data)
+
+    # Show the figure (optional if running in a script and just want to save)
+    figure.show()
+
+    # Export the figure to a PNG file
+    figure.export("my_plot.png")
+    ```
+    *(This functionality is demonstrated in the test suite file `./tests/test_examples.py` and defined in `layouts/_figure.py`.)*
+
+    ---
+
+    ### More About the Library
+
+    Based on the examples, here are some other significant features of `fastplotlib`:
+
+    *   **Rich Graphic Types:** Beyond scatter plots, it has first-class support for:
+        *   **Images & Videos:** `add_image` can handle 2D grayscale, RGB, and RGBA data. The `ImageWidget` is specifically designed for multi-dimensional data like videos (`t, y, x, c`) or z-stacks (`z, y, x, c`).
+        *   **Lines:** `add_line` for single line plots, and `add_line_collection` or `add_line_stack` for efficiently plotting thousands of lines.
+        *   **Text:** `add_text` for adding annotations to plots.
+
+    *   **Powerful Layouts:** You are not restricted to a simple grid. The `Figure` can be configured with:
+        *   A simple grid using `shape=(rows, cols)`.
+        *   A custom layout defined by `rects` (x, y, width, height) or `extents` (xmin, xmax, ymin, ymax) in either fractional or absolute pixel coordinates. This allows for complex, non-uniform arrangements of subplots.
+
+    *   **The `ImageWidget`:** This is a standout feature. It's a high-level widget that automatically creates a figure, sliders for extra dimensions (like time or z-depth), and an interactive histogram with a Look-Up Table (LUT) for adjusting contrast and colormaps. It is ideal for scientific image analysis. *(See `./examples/image_widget/image_widget.py`)*
+
+    *   **Event Handling:** You can attach custom functions to events like `click`, `pointer_move`, or even changes to a graphic's properties (like its `data` or `cmap`). This enables building sophisticated, interactive applications where plots are linked or data can be manipulated directly with the mouse. *(See `./examples/events/drag_points.py` and `scatter_hover.py`)*
+
+    *   **Selection Tools:** The library provides selector graphics like `LinearSelector`, `LinearRegionSelector`, and `RectangleSelector` that can be added to other graphics. These tools allow users to interactively select regions of data and trigger callbacks to analyze or visualize the selection. *(See `./examples/selection_tools/fft.py`)*
